@@ -1,0 +1,159 @@
+#Checking GPU Access!
+
+!nvidia-smi
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Create a HOME constant.
+
+import os
+HOME = os.getcwd()
+print(HOME)
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Install YOLO11 via Ultralytics
+
+%pip install ultralytics supervision roboflow
+import ultralytics
+ultralytics.checks()
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Inference with model pre-trained on COCO dataset
+
+#CLI
+
+!yolo task=detect mode=predict model=yolo11n.pt conf=0.25 source='https://media.roboflow.com/notebooks/examples/dog.jpeg' save=True
+
+#CLI requires no customization or Python code. We can simply run all tasks from the terminal with the yolo command.
+
+#Result annotated image got saved in {HOME}/runs/detect/predict/
+
+#Image Display Post Annotation 
+
+from IPython.display import Image as IPyImage
+IPyImage(filename=f'{HOME}/runs/detect/predict/dog.jpeg', width=600)
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#SDK
+
+#YOLO's Python interface allows for seamless integration into your Python projects, making it easy to load, run, and process the model's output.
+
+from ultralytics import YOLO
+from PIL import Image
+import requests
+
+model = YOLO('yolo11n.pt')
+image = Image.open(requests.get('https://media.roboflow.com/notebooks/examples/dog.jpeg', stream=True).raw)
+result = model.predict(image, conf=0.25)[0]
+
+#The obtained result object stores information about the location, classes, and confidence levels of the detected objects.
+
+result.boxes.xyxy
+
+#configuration
+
+result.boxes.conf
+
+#classes
+
+result.boxes.cls
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#YOLO11 can be easily integrated with supervision using the familiar from_ultralytics connector.
+
+import supervision as sv
+
+detections = sv.Detections.from_ultralytics(result)
+
+box_annotator = sv.BoxAnnotator()
+label_annotator = sv.LabelAnnotator(text_color=sv.Color.BLACK)
+
+annotated_image = image.copy()
+annotated_image = box_annotator.annotate(annotated_image, detections=detections)
+annotated_image = label_annotator.annotate(annotated_image, detections=detections)
+
+sv.plot_image(annotated_image, size=(10, 10))
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Fine-tune YOLO11 on custom dataset
+
+#When training YOLOv11, make sure your data is located in datasets. If you'd like to change the default location of the data you want to use for fine-tuning, you can do so through Ultralytics' settings.json. 
+#In this tutorial, we will use one of the datasets available on Roboflow Universe (https://universe.roboflow.com/liangdianzhong/-qvdww/dataset/3). When downloading, make sure to select the yolov11 export format.
+
+!mkdir {HOME}/datasets
+%cd {HOME}/datasets
+
+from google.colab import userdata
+from roboflow import Roboflow
+
+ROBOFLOW_API_KEY = userdata.get('ROBOFLOW_API_KEY')
+rf = Roboflow(api_key=ROBOFLOW_API_KEY)
+
+workspace = rf.workspace("liangdianzhong")
+project = workspace.project("-qvdww")
+version = project.version(3)
+dataset = version.download("yolov11")
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Custom Training
+
+%cd {HOME}
+
+!yolo task=detect mode=train model=yolo11s.pt data={dataset.location}/data.yaml epochs=10 imgsz=640 plots=True
+
+#The results of the completed training are saved in {HOME}/runs/detect/train/
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Result Examination
+
+!ls {HOME}/runs/detect/train/
+
+#Confusion Matrix
+
+from IPython.display import Image as IPyImage
+
+IPyImage(filename=f'{HOME}/runs/detect/train/confusion_matrix.png', width=600)
+
+#Results over Epoch Graph
+
+from IPython.display import Image as IPyImage
+
+IPyImage(filename=f'{HOME}/runs/detect/train/results.png', width=600)
+
+#Sample Prediction on Validation Data
+
+from IPython.display import Image as IPyImage
+
+IPyImage(filename=f'{HOME}/runs/detect/train/val_batch0_pred.jpg', width=600)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Validate fine-tuned model
+
+#Testing on Unfamiliar Dataset
+
+!yolo task=detect mode=val model={HOME}/runs/detect/train/weights/best.pt data={dataset.location}/data.yaml
+
+#Inference with custom model
+
+!yolo task=detect mode=predict model={HOME}/runs/detect/train/weights/best.pt conf=0.25 source={dataset.location}/test/images save=True
+
+#Visualizing Few Results
+
+import glob
+import os
+from IPython.display import Image as IPyImage, display
+
+latest_folder = max(glob.glob('/content/runs/detect/predict*/'), key=os.path.getmtime)
+for img in glob.glob(f'{latest_folder}/*.jpg')[:3]:
+    display(IPyImage(filename=img, width=600))
+    print("\n")
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
