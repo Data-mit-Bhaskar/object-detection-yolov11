@@ -1,5 +1,5 @@
 # **Advanced Object Detection with YOLOv11**
-*A **Semester 1 MSc. Computer Vision & AI** project at **Berlin School of Business & Innovation (BSBI)**, where I built a **YOLOv11-based object detection model** to classify snooker balls in images, achieving **high precision and recall**. This project aligns with my professional experience at **Sakon (GSG)**, where I optimized data workflows and reduced errors by **11%**, and my focus on **AI-driven solutions for real-world applications** like environmental monitoring and entertainment.*
+*A **Semester 3 MSc. Computer Vision & AI** project at **Berlin School of Business & Innovation (BSBI)**, where I built a **YOLOv11-based object detection model** to classify snooker balls in images, achieving **high precision and recall**. This project aligns with my professional experience at **Sakon (GSG)**, where I optimized data workflows and reduced errors by **11%**, and my focus on **AI-driven solutions for real-world applications** like environmental monitoring and entertainment.*
 
 ---
 
