@@ -25,3 +25,7 @@ This project leverages **YOLOv11** and **Roboflow** to train an object detection
  | **Python**                | End-to-end implementation (data loading, training, evaluation).          | Matches my **Python-based automation** projects.       |
 
 ---
+
+For a visual walkthrough of the project outputs, check out the OutputSnaps folder—I’ve compiled chronologically arranged snapshots of all key visualizations and results for easy reference! 📸📂
+
+---
